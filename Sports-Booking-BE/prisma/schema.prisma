@@ -1,0 +1,350 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserStatus {
+  active
+  banned
+  pending_approve
+}
+
+enum FieldStatus {
+  active
+  maintenance
+  inactive
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+  rejected
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+  refunded
+}
+
+enum TransactionType {
+  payment
+  refund
+}
+
+enum PaymentMethod {
+  qr_transfer
+  cash
+}
+
+enum TransactionStatus {
+  pending
+  success
+  failed
+}
+
+enum RefundStatus {
+  pending
+  approved
+  rejected
+}
+
+enum NotificationType {
+  system
+  booking
+  promotion
+}
+
+enum Sender {
+  user
+  bot
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  roleId Int @map("role_id")
+  email String @unique @db.VarChar(255)
+  passwordHash String @map("password_hash")
+  fullName String @map("full_name")
+  phone String? @db.VarChar(20)
+  avatarUrl String? @map("avatar_url") @db.VarChar(500)
+  status UserStatus @default(active)
+  isVerified Boolean @default(false) @map("is_verified")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+  
+  role Role @relation(fields: [roleId], references: [id]) // N-1
+  fields Field[] @relation("FieldOwner") // 1-N
+  bookings Booking[]
+  reviews Review[]
+  refundRequests RefundRequest[]
+  notifications Notification[]
+  chatLogs ChatLog[]
+  refreshToken RefreshToken[]
+
+  @@map("users")
+}
+
+model Role {
+  id Int @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+  description String? @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  users User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id Int @id @default(autoincrement())
+  slug String @unique @db.VarChar(100)
+  name String? @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId Int @map("role_id")
+  permissionId Int @map("permission_id")
+
+  role Role @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Sport {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(50)
+  iconUrl String? @map("icon_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  fields Field[]
+
+  @@map("sports")
+}
+
+model Utility {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(100)
+  iconClass String? @map("icon_class") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  fieldUtilities FieldUtility[]
+
+  @@map("utilities")
+}
+
+model Field {
+  id Int @id @default(autoincrement())
+  ownerId Int @map("owner_id")
+  sportId Int @map("sport_id")
+  name String @db.VarChar(100)
+  description String? @db.Text
+  address String @db.VarChar(255)
+  district String? @db.VarChar(100)
+  city String? @db.VarChar(100)
+  latitude Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+  status FieldStatus @default(active)
+  openTime String? @map("open_time") @db.VarChar(8)
+  closeTime String? @map("close_time") @db.VarChar(8)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  owner User @relation("FieldOwner", fields: [ownerId], references: [id])
+  sport Sport @relation(fields: [sportId], references: [id])
+  fieldUtilities FieldUtility[]
+  fieldImages FieldImage[]
+  fieldPricings FieldPricing[] // Giá sân tại nhiều thời điểm
+  bookings Booking[]
+  reviews Review[]
+
+  @@map("fields")
+}
+
+model FieldUtility {
+  fieldId Int @map("field_id")
+  utilityId Int @map("utility_id")
+
+  field Field @relation(fields: [fieldId], references: [id])
+  utility Utility @relation(fields: [utilityId], references: [id])
+
+  @@id([fieldId, utilityId])
+  @@map("field_utilities")
+}
+
+model FieldImage {
+  id Int @id @default(autoincrement())
+  fieldId Int @map("field_id")
+  imageUrl String @map("image_url") @db.VarChar(500)
+  isThumbnail Boolean @default(false) @map("is_thumbnail")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  field Field @relation(fields: [fieldId], references: [id])
+
+  @@map("field_images")
+}
+
+model FieldPricing {
+  id Int @id @default(autoincrement())
+  fieldId Int @map("field_id")
+  startTime DateTime @map("start_time") @db.DateTime(0)
+  endTime DateTime @map("end_time") @db.DateTime(0)
+  pricePerHour Decimal @map("price_per_hour") @db.Decimal(15, 2)
+  isWeekend Boolean @default(false) @map("is_weekend")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  field Field @relation(fields: [fieldId], references: [id])
+
+  @@map("field_pricing")
+}
+
+model Booking {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  fieldId Int @map("field_id")
+  startTime DateTime @map("end_time") @db.DateTime(0)
+  totalPrice Decimal @map("total_price") @db.Decimal(15, 2)
+  depositAmount Decimal? @map("deposit_amount") @db.Decimal(15, 2)
+  status BookingStatus @default(pending)
+  paymentStatus PaymentStatus @default(unpaid)
+  checkInCode String? @unique @map("check_in_code") @db.VarChar(100)
+  note String? @db.Text
+  rejectionReason String? @map("rejection_reason") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id])
+  field Field @relation(fields: [fieldId], references: [id])
+  transactions Transaction[]
+  review Review?
+  refundRequest RefundRequest?
+
+  @@map("bookings")
+}
+
+model Transaction {
+  id Int @id @default(autoincrement())
+  bookingId Int @map("booking_id")
+  amount Decimal @db.Decimal(15, 2)
+  type TransactionType
+  method PaymentMethod @default(qr_transfer)
+  status TransactionStatus @default(success)
+  description String? @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("transactions")
+}
+
+model RefundRequest {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  bookingId Int @unique @map("booking_id")
+  amount Decimal @db.Decimal(15, 2)
+  bankName String @map("bank_name") @db.VarChar(100)
+  bankAccount String @map("bank_account") @db.VarChar(50)
+  accountHolder String @map("account_holder") @db.VarChar(100)
+  reason String? @db.Text
+  status RefundStatus @default(pending)
+  adminNote String? @db.Text @map("admin_note")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("refund_requests")
+}
+
+model Review {
+  id Int @id @default(autoincrement())
+  bookingId Int @unique @map("booking_id")
+  userId Int @map("user_id")
+  fieldId Int @map("field_id")
+  rating Int @db.UnsignedTinyInt // 1->5
+  comment String? @db.Text
+  ownerReply String? @map("owner_reply") @db.Text
+  ownerReplyAt DateTime? @map("owner_reply_at") @db.DateTime(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  field Field @relation(fields: [fieldId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  title String? @db.VarChar(255)
+  message String? @db.Text
+  type NotificationType @default(system)
+  isRead Boolean @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model ChatLog {
+  id Int @id @default(autoincrement())
+  userId Int? @map("user_id")
+  sessionId String? @map("session_id") @db.VarChar(100)
+  messageContent String? @map("message_content") @db.Text
+  sender Sender
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("chat_logs")
+}
+
+model RefreshToken {
+  id Int @id @default(autoincrement())
+  userId Int @map("user_id")
+  tokenHash String @unique @map("token_hash") @db.VarChar(255)
+  deviceInfo String? @map("device_info") @db.VarChar(255)  // Optional: device details
+  ipAddress String? @map("ip_address") @db.VarChar(45)     // IPv4 hoặc IPv6
+  isRevoked Boolean @default(false) @map("is_revoked")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([expiresAt])
+}

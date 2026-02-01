@@ -1,0 +1,207 @@
+table users {
+  id int [pk, increment]
+  role_id int [not null]
+  email varchar(255) unique [not null]
+  password_hash varchar(255) [not null]
+  full_name varchar(100) [not null]
+  phone varchar(20)
+  avatar_url varchar(500)
+  status enum('active', 'banned', 'pending_approve') // default: active
+  is_verified boolean // default: false - xác thực email
+  created_at datetime
+  updated_at datetime
+}
+
+table roles {
+  id INT [pk, increment]
+  name varchar(50) [unique, not null] // 'admin', 'owner', 'customer'
+  description varchar(255)
+  created_at datetime
+  updated_at datetime
+}
+
+table permissions {
+  id INT [pk, increment]
+  slug varchar(100) [unique, not null] // 'field.create', 'user.ban'
+  name varchar(100)
+  created_at datetime
+  updated_at datetime
+}
+
+table role_permissions {
+  role_id int [not null]
+  permission_id int [not null]
+
+  indexes {
+    (permission_id, role_id) [pk]
+  }
+}
+
+table sports {
+  id int [pk, increment]
+  name varchar(50) [not null]
+  icon_url varchar(500)
+  created_at datetime
+  updated_at datetime
+}
+
+table utilities {
+  id int [pk, increment]
+  name varchar(100) [not null]
+  icon_class varchar(50)
+  created_at datetime
+  updated_at datetime
+}
+
+table fields {
+  id int [pk, increment]
+  owner_id int [not null]
+  sport_id int [not null]
+  name varchar(100) [not null]
+  description text
+  address varchar(255) [not null]
+  district varchar(100)
+  city varchar(100)
+  latitude DECIMAL(10, 8)
+  longitude DECIMAL(11, 8)
+  status enum('active', 'maintenance', 'inactive') // default: active
+  open_time time
+  close_time time
+  created_at datetime
+  updated_at datetime
+}
+
+TABLE field_utilities {
+    field_id INT
+    utility_id INT
+
+    indexes {
+      (field_id, utility_id) [pk]
+    }
+}
+
+table field_images {
+  id int [pk, increment]
+  field_id int [not null]
+  image_url varchar(500) [not null]
+  is_thumbnail BOOLEAN // default: false
+  created_at datetime
+  updated_at datetime
+}
+
+table field_pricing {
+  id INT [pk, INCREMENT]
+  field_id INT [NOT NULL]
+  start_time TIME [NOT NULL]
+  end_time TIME [NOT NULL]
+  price_per_hour DECIMAL(15, 2) [NOT NULL]
+  is_weekend BOOLEAN // DEFAULT FALSE,
+  created_at datetime
+  updated_at datetime
+}
+
+table bookings {
+  id INT [pk, INCREMENT]
+  user_id INT [NOT NULL]
+  field_id INT [NOT NULL]
+
+  start_time DATETIME [NOT NULL]
+  end_time DATETIME [NOT NULL] 
+  total_price DECIMAL(15, 2) [NOT NULL] 
+  deposit_amount DECIMAL(15, 2) // DEFAULT 0
+
+  status ENUM('pending', 'confirmed', 'completed', 'cancelled', 'rejected') // DEFAULT 'pending'
+  payment_status ENUM('unpaid', 'paid', 'refunded') // DEFAULT 'unpaid'
+  
+  check_in_code VARCHAR(100) UNIQUE
+  note TEXT
+  rejection_reason VARCHAR(255)
+  created_at datetime
+  updated_at datetime
+}
+
+table transactions {
+  id INT [pk, INCREMENT]
+  booking_id int [not null]
+
+  amount decimal(15, 2) [not null]
+  type enum('payment', 'refund') [not null]
+  method enum('qr_transfer', 'cash') // default qr_transfer
+  status ENUM('pending', 'success', 'failed') // DEFAULT 'success',
+  description VARCHAR(255)
+
+  created_at datetime
+  updated_at datetime
+}
+
+table refund_requests {
+  id INT [pk, INCREMENT]
+  user_id INT [NOT NULL]
+  booking_id INT [NOT NULL]
+  amount DECIMAL(15, 2) [NOT NULL]
+
+  bank_name VARCHAR(100) [not null] // 'BIDV'
+  bank_account VARCHAR(50) [not null] // '09999999999'
+  account_holder VARCHAR(100) [not null] // 'NGUYEN VAN A'
+
+  reason TEXT
+  status ENUM('pending', 'approved', 'rejected') // DEFAULT 'pending'
+  admin_note TEXT
+
+  created_at datetime
+  updated_at datetime
+}
+
+table reviews {
+  id INT [PK, INCREMENT]
+  booking_id INT [NOT NULL, UNIQUE]
+  user_id INT [NOT NULL]
+  field_id INT [NOT NULL]
+  rating int [not null, note: 'Check: 1-5']
+  comment TEXT
+  owner_reply TEXT
+  owner_reply_at TIMESTAMP [NULL]
+
+  created_at datetime
+  updated_at datetime
+}
+
+table notifications {
+  id INT [PK, INCREMENT]
+  user_id INT [NOT NULL]
+  title VARCHAR(255)
+  message TEXT
+  type ENUM('system', 'booking', 'promotion') // DEFAULT 'system'
+  is_read BOOLEAN // DEFAULT FALSE
+
+  created_at datetime
+  updated_at datetime
+}
+
+table chat_logs {
+  id INT [PK, INCREMENT]
+  user_id INT
+  session_id VARCHAR(100)
+  message_content TEXT
+  sender ENUM('user', 'bot') [NOT NULL]
+
+  created_at datetime
+  updated_at datetime
+}
+
+ref: users.id < notifications.user_id
+ref: users.id < chat_logs.user_id
+ref: roles.id < users.role_id
+ref: roles.id < role_permissions.role_id
+ref: permissions.id < role_permissions.permission_id
+ref: fields.owner_id > users.id
+ref: fields.sport_id > sports.id
+ref: fields.id < field_images.field_id
+ref: fields.id < field_pricing.field_id
+ref: fields.id < field_utilities.field_id
+ref: utilities.id < field_utilities.utility_id
+ref: bookings.user_id > users.id
+ref: bookings.id - reviews.booking_id
+ref: bookings.id - refund_requests.booking_id
+ref: bookings.id < transactions.booking_id
+
