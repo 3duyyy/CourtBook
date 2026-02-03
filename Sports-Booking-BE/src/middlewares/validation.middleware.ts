@@ -2,7 +2,7 @@ import { plainToInstance } from 'class-transformer'
 import { validate, ValidationError } from 'class-validator'
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import { AppError } from '../exceptions'
+import { AppError } from '../shared/exceptions'
 
 export const validationMiddleware = (dtoClass: any) => {
   return async (req: Request, res: Response, next: NextFunction) => {

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import { AppError } from '../exceptions'
+import { AppError } from '../shared/exceptions'
 
 export const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
   // Set giá trị mặc định nếu err không có
