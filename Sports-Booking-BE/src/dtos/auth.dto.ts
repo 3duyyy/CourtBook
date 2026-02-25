@@ -6,10 +6,12 @@ export class RegisterDto {
   @IsEmail()
   email!: string
 
+  @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @IsString()
   @MinLength(6, { message: 'Password phải tối thiểu 6 ký tự' })
   password!: string
 
+  @IsNotEmpty({ message: 'Tên không được để trống' })
   @IsString()
   fullName!: string
 

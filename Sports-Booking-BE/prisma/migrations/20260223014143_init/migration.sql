@@ -71,7 +71,7 @@ CREATE TABLE `utilities` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `fields` (
+CREATE TABLE `facilities` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `owner_id` INTEGER NOT NULL,
     `sport_id` INTEGER NOT NULL,
@@ -82,9 +82,9 @@ CREATE TABLE `fields` (
     `city` VARCHAR(100) NULL,
     `latitude` DECIMAL(10, 8) NULL,
     `longitude` DECIMAL(11, 8) NULL,
-    `status` ENUM('active', 'maintenance', 'inactive') NOT NULL DEFAULT 'active',
-    `open_time` VARCHAR(8) NULL,
-    `close_time` VARCHAR(8) NULL,
+    `status` ENUM('pending_approve', 'active', 'inactive') NOT NULL DEFAULT 'pending_approve',
+    `open_time` VARCHAR(5) NULL,
+    `close_time` VARCHAR(5) NULL,
     `created_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updated_at` DATETIME(0) NOT NULL,
 
@@ -92,19 +92,32 @@ CREATE TABLE `fields` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `field_utilities` (
-    `field_id` INTEGER NOT NULL,
+CREATE TABLE `facility_utilities` (
+    `facility_id` INTEGER NOT NULL,
     `utility_id` INTEGER NOT NULL,
 
-    PRIMARY KEY (`field_id`, `utility_id`)
+    PRIMARY KEY (`facility_id`, `utility_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `field_images` (
+CREATE TABLE `facility_images` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `field_id` INTEGER NOT NULL,
+    `facility_id` INTEGER NOT NULL,
     `image_url` VARCHAR(500) NOT NULL,
     `is_thumbnail` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `updated_at` DATETIME(0) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `fields` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `facility_id` INTEGER NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `description` TEXT NULL,
+    `status` ENUM('active', 'maintenance', 'inactive') NOT NULL DEFAULT 'active',
     `created_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updated_at` DATETIME(0) NOT NULL,
 
@@ -115,8 +128,8 @@ CREATE TABLE `field_images` (
 CREATE TABLE `field_pricing` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `field_id` INTEGER NOT NULL,
-    `start_time` DATETIME(0) NOT NULL,
-    `end_time` DATETIME(0) NOT NULL,
+    `start_time` VARCHAR(5) NOT NULL,
+    `end_time` VARCHAR(5) NOT NULL,
     `price_per_hour` DECIMAL(15, 2) NOT NULL,
     `is_weekend` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
@@ -130,6 +143,7 @@ CREATE TABLE `bookings` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
     `field_id` INTEGER NOT NULL,
+    `start_time` DATETIME(0) NOT NULL,
     `end_time` DATETIME(0) NOT NULL,
     `total_price` DECIMAL(15, 2) NOT NULL,
     `deposit_amount` DECIMAL(15, 2) NULL,
@@ -172,6 +186,7 @@ CREATE TABLE `refund_requests` (
     `reason` TEXT NULL,
     `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     `admin_note` TEXT NULL,
+    `proof_image_url` VARCHAR(500) NULL,
     `created_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updated_at` DATETIME(0) NOT NULL,
 
@@ -184,7 +199,7 @@ CREATE TABLE `reviews` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `booking_id` INTEGER NOT NULL,
     `user_id` INTEGER NOT NULL,
-    `field_id` INTEGER NOT NULL,
+    `facility_id` INTEGER NOT NULL,
     `rating` TINYINT UNSIGNED NOT NULL,
     `comment` TEXT NULL,
     `owner_reply` TEXT NULL,
@@ -251,22 +266,25 @@ ALTER TABLE `role_permissions` ADD CONSTRAINT `role_permissions_role_id_fkey` FO
 ALTER TABLE `role_permissions` ADD CONSTRAINT `role_permissions_permission_id_fkey` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `fields` ADD CONSTRAINT `fields_owner_id_fkey` FOREIGN KEY (`owner_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `facilities` ADD CONSTRAINT `facilities_owner_id_fkey` FOREIGN KEY (`owner_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `fields` ADD CONSTRAINT `fields_sport_id_fkey` FOREIGN KEY (`sport_id`) REFERENCES `sports`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `facilities` ADD CONSTRAINT `facilities_sport_id_fkey` FOREIGN KEY (`sport_id`) REFERENCES `sports`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `field_utilities` ADD CONSTRAINT `field_utilities_field_id_fkey` FOREIGN KEY (`field_id`) REFERENCES `fields`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `facility_utilities` ADD CONSTRAINT `facility_utilities_facility_id_fkey` FOREIGN KEY (`facility_id`) REFERENCES `facilities`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `field_utilities` ADD CONSTRAINT `field_utilities_utility_id_fkey` FOREIGN KEY (`utility_id`) REFERENCES `utilities`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `facility_utilities` ADD CONSTRAINT `facility_utilities_utility_id_fkey` FOREIGN KEY (`utility_id`) REFERENCES `utilities`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `field_images` ADD CONSTRAINT `field_images_field_id_fkey` FOREIGN KEY (`field_id`) REFERENCES `fields`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `facility_images` ADD CONSTRAINT `facility_images_facility_id_fkey` FOREIGN KEY (`facility_id`) REFERENCES `facilities`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `field_pricing` ADD CONSTRAINT `field_pricing_field_id_fkey` FOREIGN KEY (`field_id`) REFERENCES `fields`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `fields` ADD CONSTRAINT `fields_facility_id_fkey` FOREIGN KEY (`facility_id`) REFERENCES `facilities`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `field_pricing` ADD CONSTRAINT `field_pricing_field_id_fkey` FOREIGN KEY (`field_id`) REFERENCES `fields`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `bookings` ADD CONSTRAINT `bookings_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -290,7 +308,7 @@ ALTER TABLE `reviews` ADD CONSTRAINT `reviews_booking_id_fkey` FOREIGN KEY (`boo
 ALTER TABLE `reviews` ADD CONSTRAINT `reviews_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `reviews` ADD CONSTRAINT `reviews_field_id_fkey` FOREIGN KEY (`field_id`) REFERENCES `fields`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `reviews` ADD CONSTRAINT `reviews_facility_id_fkey` FOREIGN KEY (`facility_id`) REFERENCES `facilities`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `notifications` ADD CONSTRAINT `notifications_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

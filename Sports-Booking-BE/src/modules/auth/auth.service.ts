@@ -32,8 +32,10 @@ export class AuthService {
       expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
     })
 
+    const { passwordHash: _, ...userResult } = user
+
     return {
-      user,
+      user: userResult,
       accessToken,
       refreshToken
     }
@@ -68,8 +70,9 @@ export class AuthService {
       expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
     })
 
+    const { passwordHash, ...userResult } = user
     return {
-      user,
+      user: userResult,
       accessToken,
       refreshToken
     }
@@ -87,6 +90,11 @@ export class AuthService {
     const storedToken = await AuthRepository.getRefreshToken(tokenHash)
     if (!storedToken || storedToken.isRevoked) {
       throw new AppError('Refresh token đã bị thu hồi', StatusCodes.UNAUTHORIZED)
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      await AuthRepository.revokeRefreshToken(tokenHash)
+      throw new AppError('Hết phiên đăng nhập, vui lòng đăng nhập lại!', StatusCodes.UNAUTHORIZED)
     }
 
     const user = await AuthRepository.findById(payload.id)

@@ -17,7 +17,7 @@ export class JwtUtil {
   }
 
   static generateRefreshToken(payload: JwtPayload): string {
-    return jwt.sign(payload, env.ACCESS_TOKEN_SECRET_SIGNATURE!, {
+    return jwt.sign(payload, env.REFRESH_TOKEN_SECRET_SIGNATURE!, {
       expiresIn: '3d',
       algorithm: 'HS256'
     })

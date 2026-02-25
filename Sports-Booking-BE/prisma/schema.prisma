@@ -18,6 +18,12 @@ enum UserStatus {
   pending_approve
 }
 
+enum FacilityStatus {
+  pending_approve
+  active
+  inactive
+}
+
 enum FieldStatus {
   active
   maintenance
@@ -85,7 +91,7 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
   
   role Role @relation(fields: [roleId], references: [id]) // N-1
-  fields Field[] @relation("FieldOwner") // 1-N
+  facilities Facility[] @relation("FieldOwner") // 1-N
   bookings Booking[]
   reviews Review[]
   refundRequests RefundRequest[]
@@ -139,7 +145,7 @@ model Sport {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
-  fields Field[]
+  facilities Facility[]
 
   @@map("sports")
 }
@@ -151,12 +157,12 @@ model Utility {
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
-  fieldUtilities FieldUtility[]
+  facilityUtilities FacilityUtility[]
 
   @@map("utilities")
 }
 
-model Field {
+model Facility {
   id Int @id @default(autoincrement())
   ownerId Int @map("owner_id")
   sportId Int @map("sport_id")
@@ -167,58 +173,74 @@ model Field {
   city String? @db.VarChar(100)
   latitude Decimal? @db.Decimal(10, 8)
   longitude Decimal? @db.Decimal(11, 8)
-  status FieldStatus @default(active)
-  openTime String? @map("open_time") @db.VarChar(8)
-  closeTime String? @map("close_time") @db.VarChar(8)
+  status FacilityStatus @default(pending_approve)
+  openTime String? @map("open_time") @db.VarChar(5)
+  closeTime String? @map("close_time") @db.VarChar(5)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
   owner User @relation("FieldOwner", fields: [ownerId], references: [id])
   sport Sport @relation(fields: [sportId], references: [id])
-  fieldUtilities FieldUtility[]
-  fieldImages FieldImage[]
-  fieldPricings FieldPricing[] // Giá sân tại nhiều thời điểm
-  bookings Booking[]
+  fields Field[]
+  facilityUtilities FacilityUtility[]
+  facilityImages FacilityImage[]
+  // bookings Booking[]
   reviews Review[]
 
-  @@map("fields")
+  @@map("facilities")
 }
 
-model FieldUtility {
-  fieldId Int @map("field_id")
+model FacilityUtility {
+  facilityId Int @map("facility_id")
   utilityId Int @map("utility_id")
 
-  field Field @relation(fields: [fieldId], references: [id])
+  facility Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   utility Utility @relation(fields: [utilityId], references: [id])
 
-  @@id([fieldId, utilityId])
-  @@map("field_utilities")
+  @@id([facilityId, utilityId])
+  @@map("facility_utilities")
 }
 
-model FieldImage {
+model FacilityImage {
   id Int @id @default(autoincrement())
-  fieldId Int @map("field_id")
+  facilityId Int @map("facility_id")
   imageUrl String @map("image_url") @db.VarChar(500)
   isThumbnail Boolean @default(false) @map("is_thumbnail")
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
-  field Field @relation(fields: [fieldId], references: [id])
+  facility Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
 
-  @@map("field_images")
+  @@map("facility_images")
+}
+
+model Field {
+  id Int @id @default(autoincrement())
+  facilityId Int @map("facility_id")
+  name String @db.VarChar(100)
+  description String? @db.Text
+  status FieldStatus @default(active)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  facility Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  fieldPricings FieldPricing[]
+  bookings Booking[]
+
+  @@map("fields")
 }
 
 model FieldPricing {
   id Int @id @default(autoincrement())
   fieldId Int @map("field_id")
-  startTime DateTime @map("start_time") @db.DateTime(0)
-  endTime DateTime @map("end_time") @db.DateTime(0)
+  startTime String @map("start_time") @db.VarChar(5)
+  endTime String @map("end_time") @db.VarChar(5)
   pricePerHour Decimal @map("price_per_hour") @db.Decimal(15, 2)
   isWeekend Boolean @default(false) @map("is_weekend")
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
-  field Field @relation(fields: [fieldId], references: [id])
+  field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
   @@map("field_pricing")
 }
@@ -227,7 +249,8 @@ model Booking {
   id Int @id @default(autoincrement())
   userId Int @map("user_id")
   fieldId Int @map("field_id")
-  startTime DateTime @map("end_time") @db.DateTime(0)
+  startTime DateTime @map("start_time") @db.DateTime(0)
+  endTime DateTime @map("end_time") @db.DateTime(0)
   totalPrice Decimal @map("total_price") @db.Decimal(15, 2)
   depositAmount Decimal? @map("deposit_amount") @db.Decimal(15, 2)
   status BookingStatus @default(pending)
@@ -274,6 +297,7 @@ model RefundRequest {
   reason String? @db.Text
   status RefundStatus @default(pending)
   adminNote String? @db.Text @map("admin_note")
+  proofImageUrl String? @map("proof_image_url") @db.VarChar(500)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
@@ -287,7 +311,7 @@ model Review {
   id Int @id @default(autoincrement())
   bookingId Int @unique @map("booking_id")
   userId Int @map("user_id")
-  fieldId Int @map("field_id")
+  facilityId Int @map("facility_id")
   rating Int @db.UnsignedTinyInt // 1->5
   comment String? @db.Text
   ownerReply String? @map("owner_reply") @db.Text
@@ -297,7 +321,7 @@ model Review {
 
   booking Booking @relation(fields: [bookingId], references: [id])
   user User @relation(fields: [userId], references: [id])
-  field Field @relation(fields: [fieldId], references: [id])
+  facility Facility @relation(fields: [facilityId], references: [id])
 
   @@map("reviews")
 }
