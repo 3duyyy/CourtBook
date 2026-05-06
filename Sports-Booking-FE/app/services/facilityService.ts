@@ -102,11 +102,14 @@ export const facilityService = {
 
     return response.data.data.map((review) => ({
       id: review.id,
+      userId: review.user.id,
       userName: review.user.fullName,
       avatarUrl: review.user.avatarUrl,
       rating: review.rating,
       comment: review.comment || "",
       createdAt: review.createdAt,
+      ownerReply: review.ownerReply || null,
+      ownerReplyAt: review.ownerReplyAt || null,
     }))
   },
 

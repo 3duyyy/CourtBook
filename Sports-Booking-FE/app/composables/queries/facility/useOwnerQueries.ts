@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query"
 import { facilityService } from "~/services/facilityService"
+import { reviewService } from "~/services/reviewService"
 import type {
   OwnerCalendarPayload,
   OwnerCalendarQueryParams,
@@ -29,6 +30,8 @@ export const ownerOverviewQueryKeys = {
   checkinHistory: (params: { date?: string; page: number; limit: number }) =>
     [...ownerOverviewQueryKeys.all, "checkin-history", params] as const,
   facilityDetail: (facilityId: number) => [...ownerOverviewQueryKeys.all, "facility-detail", facilityId] as const,
+  reviews: (params: { facilityId: number | null; page: number; limit: number }) =>
+    [...ownerOverviewQueryKeys.all, "reviews", params] as const,
 }
 
 export function useOwnerOverviewQuery(params: MaybeRef<OwnerOverviewQueryParams>, enabled: MaybeRef<boolean>) {
@@ -244,6 +247,57 @@ export function useOwnerSetFieldPricesMutation() {
     }) => facilityService.setOwnerFieldPrices(fieldId, payload).then((r) => r.data.data),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ownerOverviewQueryKeys.facilityDetail(vars.facilityId) })
+    },
+  })
+}
+
+// ==========Reviews==========
+export function useOwnerReviewsQuery(
+  params: MaybeRef<{ facilityId: number | null; page: number; limit: number }>,
+  enabled: MaybeRef<boolean>,
+) {
+  return useQuery({
+    queryKey: computed(() => ownerOverviewQueryKeys.reviews(unref(params))),
+    enabled: computed(() => Boolean(unref(enabled) && unref(params).facilityId)),
+    queryFn: async () => {
+      const p = unref(params)
+      const res = await reviewService.getOwnerReviews({
+        facilityId: p.facilityId!,
+        page: p.page,
+        limit: p.limit,
+      })
+      return { data: res.data.data, pagination: res.data.pagination }
+    },
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useOwnerReplyReviewMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ reviewId, reply }: { reviewId: number; reply: string }) => reviewService.ownerReplyReview(reviewId, reply),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...ownerOverviewQueryKeys.all, "reviews"] })
+    },
+  })
+}
+
+export function useOwnerDeleteReviewMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (reviewId: number) => reviewService.ownerDeleteReview(reviewId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...ownerOverviewQueryKeys.all, "reviews"] })
+    },
+  })
+}
+
+export function useOwnerDeleteReplyReviewMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (reviewId: number) => reviewService.deleteOwnerReplyReview(reviewId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...ownerOverviewQueryKeys.all, "reviews"] })
     },
   })
 }

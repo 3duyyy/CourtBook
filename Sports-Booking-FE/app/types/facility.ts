@@ -82,10 +82,13 @@ export interface FacilityAmenity {
 export interface FacilityDetailReview {
   id: number
   userName: string
+  userId: number
   avatarUrl?: string | null
   rating: number
   comment: string
   createdAt: string
+  ownerReply?: string | null
+  ownerReplyAt?: string | null
 }
 
 export interface FacilityDetailSlot {

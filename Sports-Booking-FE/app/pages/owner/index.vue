@@ -111,6 +111,8 @@
             @complete="handleOwnerCompleteCheckIn"
           />
 
+          <OwnerReviewsSection v-else-if="activeTab === 'reviews'" :facility-options="ownerFacilitiesList" />
+
           <v-card v-else rounded="xl" class="border border-dashed border-slate-300 bg-white py-14 text-center shadow-none">
             <p class="text-base font-semibold text-slate-700">Tính năng này đang được hoàn thiện.</p>
             <p class="mt-2 text-sm text-slate-500">
@@ -443,6 +445,9 @@ const overviewStats = computed<OwnerStatItem[]>(() => {
 })
 
 const facilities = computed(() => facilitiesData.value?.data ?? [])
+
+const ownerFacilitiesList = computed(() => facilities.value.map((f) => ({ id: f.id, name: f.name })))
+
 const facilitiesPagination = computed(
   () =>
     facilitiesData.value?.pagination ?? {

@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiViewDashboardOutline, mdiSoccer, mdiCalendarMonthOutline, mdiQrcodeScan } from "@mdi/js"
+import { mdiViewDashboardOutline, mdiSoccer, mdiCalendarMonthOutline, mdiQrcodeScan, mdiStarOutline } from "@mdi/js"
 import type { OwnerSidebarKey } from "~/types/owner"
 
 interface SidebarItem {
@@ -45,6 +45,7 @@ const items: SidebarItem[] = [
   { key: "facilities", title: "Cơ sở thể thao", icon: mdiSoccer },
   { key: "calendar", title: "Lịch sân", icon: mdiCalendarMonthOutline },
   { key: "checkin", title: "Check-in", icon: mdiQrcodeScan },
+  { key: "reviews", title: "Đánh giá", icon: mdiStarOutline },
 ]
 
 const handleSelect = (key: OwnerSidebarKey) => {

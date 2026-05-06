@@ -19,7 +19,12 @@
             @toggle-slot="handleToggleSlot"
           />
 
-          <FacilityDetailReviewList class="mt-6" :reviews="reviews || []" />
+          <FacilityDetailReviewList
+            class="mt-6"
+            :reviews="reviews || []"
+            :facility-id="facilityId"
+            @review-created="refetchReviews"
+          />
         </div>
 
         <div class="detail-layout__side">
@@ -66,7 +71,7 @@ const selectedSlotIds = ref<string[]>([])
 
 const { data: facility } = useFacilityDetailQuery(facilityId)
 const { data: fields } = useFacilityAvailabilityQuery(facilityId, selectedDate)
-const { data: reviews } = useFacilityReviewsQuery(facilityId)
+const { data: reviews, refetch: refetchReviews } = useFacilityReviewsQuery(facilityId)
 
 watch(
   facility,

@@ -1,4 +1,4 @@
-export type OwnerSidebarKey = "overview" | "facilities" | "calendar" | "revenue" | "checkin"
+export type OwnerSidebarKey = "overview" | "facilities" | "calendar" | "revenue" | "checkin" | "reviews"
 
 // Tab dashboard
 export type OwnerOverviewStatKey = "todayBookings" | "monthlyRevenue" | "newCustomers" | "completedBookings"
