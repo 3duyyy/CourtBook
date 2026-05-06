@@ -8,6 +8,7 @@ import { adminRoutes } from '../modules/admin/admin.route'
 import { usersRoute } from '../modules/users/users.route'
 import { bookingsRoutes } from '../modules/bookings/bookings.route'
 import { uploadRoute } from '../modules/upload/upload.route'
+import { reviewsRoute } from '../modules/reviews/reviews.route'
 
 const router = Router()
 
@@ -20,5 +21,6 @@ router.use('/admin', adminRoutes)
 router.use('/users', usersRoute)
 router.use('/bookings', bookingsRoutes)
 router.use('/upload', uploadRoute)
+router.use('/reviews', reviewsRoute)
 
 export const api = router

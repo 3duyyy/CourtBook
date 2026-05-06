@@ -12,6 +12,8 @@ import {
 } from '../../dtos/facilities.dto'
 import { FacilitiesController } from './facilities.controller'
 import { ROLES } from '../../shared/constants/roles'
+import { ReviewsController } from '../reviews/reviews.controller'
+import { OwnerReplyReviewDto } from '../../dtos/reviews.dto'
 
 const router = Router()
 
@@ -34,5 +36,9 @@ router.get('/calendar', FacilitiesController.getOwnerCalendar)
 router.get('/check-in/search', FacilitiesController.searchOwnerCheckInBooking)
 router.get('/check-in/history', FacilitiesController.getOwnerCheckInHistory)
 router.patch('/check-in/:bookingId/complete', validationMiddleware(OwnerCompleteCheckInDto), FacilitiesController.completeOwnerCheckIn)
+
+router.get('/reviews', ReviewsController.getOwnerReviews)
+router.post('/reviews/:reviewId/reply', validationMiddleware(OwnerReplyReviewDto), ReviewsController.ownerReplyReview)
+router.delete('/reviews/:reviewId', ReviewsController.ownerDeleteReview)
 
 export const ownerRoute = router
