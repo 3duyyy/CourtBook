@@ -25,14 +25,47 @@
               :total-price="bookingStore.draft.totalPrice"
             />
 
-            <CheckoutQrCard
-              class="mt-4"
-              :amount="bookingStore.payableAmount"
-              :transfer-content="transferContent"
-              :loading="isPending"
-              @confirm-paid="handleConfirmPaid"
-              @cancel="openDialog"
-            />
+            <v-card rounded="xl" elevation="2" class="pa-5 mt-4">
+              <h3 class="text-lg font-bold text-center">Thanh toán online</h3>
+              <p class="text-sm text-slate-500 text-center mt-1">Bạn sẽ được chuyển đến cổng thanh toán PayOS để hoàn tất.</p>
+              <div class="mt-5 space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-500">Số tiền thanh toán</span>
+                  <span class="font-bold text-lg">{{ formatPrice(bookingStore.payableAmount) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-500">Hình thức</span>
+                  <span class="font-medium">{{
+                    bookingStore.paymentOption === "deposit" ? "Đặt cọc 30%" : "Thanh toán 100%"
+                  }}</span>
+                </div>
+              </div>
+              <div class="mt-5 flex flex-col gap-3">
+                <v-btn
+                  block
+                  color="success"
+                  rounded="xl"
+                  class="text-none font-weight-bold pa-6"
+                  :loading="isPending"
+                  @click="handlePayOnline"
+                >
+                  Thanh toán ngay
+                </v-btn>
+                <v-btn
+                  block
+                  variant="flat"
+                  color="error"
+                  rounded="xl"
+                  class="text-none font-weight-bold pa-6"
+                  @click="openDialog"
+                >
+                  Hủy thanh toán
+                </v-btn>
+              </div>
+              <p class="mt-3 text-center text-caption text-slate-500">
+                Sau khi thanh toán thành công, đơn sẽ được xác nhận tự động.
+              </p>
+            </v-card>
           </div>
 
           <CommonConfirmDialog
@@ -55,6 +88,7 @@
 
 <script setup lang="ts">
 import { useCreateBookingMutation } from "~/composables/queries/my-bookings/useMyBookingQueries"
+import { formatPrice } from "~/shared/utils"
 import { useBookingStore } from "~/stores/booking.store"
 import type { CreateBookingPayload } from "~/types/booking"
 
@@ -67,18 +101,34 @@ const router = useRouter()
 
 const isCancelDialogOpen = ref(false)
 
-const transferContent = computed(() => {
-  const draft = bookingStore.draft
-  if (!draft) return "SPORTBOOKER"
+// const transferContent = computed(() => {
+//   const draft = bookingStore.draft
+//   if (!draft) return "SPORTBOOKER"
 
-  return `SB-${draft.facilityId}-${draft.fieldId}`
-})
+//   return `SB-${draft.facilityId}-${draft.fieldId}`
+// })
 
-const { mutate: createBooking, isPending } = useCreateBookingMutation()
+const { mutateAsync: createBooking, isPending } = useCreateBookingMutation()
 
-function handleConfirmPaid() {
+// function handleConfirmPaid() {
+//   const draft = bookingStore.draft
+//   if (!draft) return
+//   const payload: CreateBookingPayload = {
+//     fieldId: draft.fieldId,
+//     date: draft.date,
+//     slots: draft.slots.map((s) => ({
+//       startTime: s.startTime,
+//       endTime: s.endTime,
+//     })),
+//     paymentOption: bookingStore.paymentOption,
+//   }
+//   createBooking(payload)
+// }
+
+async function handlePayOnline() {
   const draft = bookingStore.draft
   if (!draft) return
+
   const payload: CreateBookingPayload = {
     fieldId: draft.fieldId,
     date: draft.date,
@@ -88,7 +138,20 @@ function handleConfirmPaid() {
     })),
     paymentOption: bookingStore.paymentOption,
   }
-  createBooking(payload)
+
+  try {
+    const result = await createBooking(payload)
+    if (import.meta.client) {
+      localStorage.setItem("payos_order_code", String(result.payosOrderCode))
+    }
+
+    bookingStore.clearDraft()
+    if (result.checkoutUrl) {
+      window.location.href = result.checkoutUrl
+    }
+  } catch (error) {
+    console.error("Create booking error:", error)
+  }
 }
 
 function openDialog() {
@@ -103,7 +166,7 @@ function handleCancel() {
     return
   }
 
-  router.push("/tim-san")
+  router.push("/search-facilities")
 }
 </script>
 

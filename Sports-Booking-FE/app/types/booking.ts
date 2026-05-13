@@ -105,4 +105,15 @@ export interface CreateBookingResult {
   depositAmount: number
   paidAmount: number
   checkInCode: string
+  checkoutUrl: string
+  qrCode: string
+  payosOrderCode: number
+}
+
+export interface PaymentResultData {
+  bookingId: number
+  status: string
+  paymentStatus: string
+  totalPrice: number
+  checkInCode: string
 }

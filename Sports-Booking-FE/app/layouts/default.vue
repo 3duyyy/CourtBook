@@ -11,10 +11,13 @@
 
     <Footer />
   </v-app>
+
+  <Chatbot />
 </template>
 
 <script setup lang="ts">
 import { mdiWhiteBalanceSunny, mdiMoonWaningCrescent } from "@mdi/js"
+import Chatbot from "~/components/common/Chatbot.vue"
 import Footer from "~/components/common/Footer.vue"
 import Header from "~/components/common/Header.vue"
 

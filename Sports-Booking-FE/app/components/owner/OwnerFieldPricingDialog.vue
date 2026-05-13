@@ -167,6 +167,22 @@ const onSubmit = () => {
     }
   }
 
+  const pricings = parsed.data.pricings
+  for (let i = 0; i < pricings.length; i++) {
+    for (let j = i + 1; j < pricings.length; j++) {
+      const a = pricings[i]!
+      const b = pricings[j]!
+
+      if (a.isWeekend !== b.isWeekend) continue
+
+      if (a.startTime < b.endTime && b.startTime < a.endTime) {
+        const label = a.isWeekend ? "cuối tuần" : "trong tuần"
+        errorText.value = `Khung giờ ${a.startTime}-${a.endTime} và ${b.startTime}-${b.endTime} (${label}) bị chồng lấn nhau`
+        return
+      }
+    }
+  }
+
   emit("submit", parsed.data)
 }
 </script>

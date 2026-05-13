@@ -51,19 +51,10 @@ export function useCancelMyBookingMutation() {
 }
 
 export function useCreateBookingMutation() {
-  const queryClient = useQueryClient()
-  const router = useRouter()
-  const bookingStore = useBookingStore()
   return useMutation({
     mutationFn: async (payload: CreateBookingPayload) => {
       const response = await bookingService.createBooking(payload)
       return response.data.data
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: myBookingsQueryKeys.all })
-      toast.success("Đặt sân thành công! Đang chờ xác nhận thanh toán.")
-      bookingStore.clearDraft()
-      router.push("/my-bookings")
     },
   })
 }
