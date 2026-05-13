@@ -492,4 +492,21 @@ export class FacilitiesController {
       next(error)
     }
   }
+
+  static async ownerRejectBooking(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ownerId = req.user.id
+      const bookingId = Number(req.params.bookingId)
+      const { reason } = req.body
+
+      if (!reason || !reason.trim()) {
+        throw new AppError('Vui lòng nhập lý do từ chối', StatusCodes.BAD_REQUEST)
+      }
+
+      await FacilitiesService.ownerRejectBooking(ownerId, bookingId, reason)
+      res.status(StatusCodes.OK).json({ success: true, message: 'Đã từ chối booking' })
+    } catch (error) {
+      next(error)
+    }
+  }
 }

@@ -4,6 +4,8 @@ import { AppError } from '../../shared/exceptions'
 import { BookingsRepository } from './bookings.repository'
 import { timeToMinutes } from '../../shared/utils/format'
 import crypto from 'crypto'
+import { payos } from '../../shared/payos/client'
+import { env } from '../../config/env.config'
 
 export class BookingsService {
   static async createBooking(userId: number, dto: CreateBookingDto) {
@@ -89,6 +91,10 @@ export class BookingsService {
     totalPrice = Math.round(totalPrice)
     const depositAmount = Math.round(totalPrice * 0.3)
     const checkInCode = 'CK-' + crypto.randomBytes(4).toString('hex').toUpperCase()
+
+    const payosOrderCode = Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-13))
+    const paidAmount = dto.paymentOption === 'full' ? totalPrice : depositAmount
+
     const booking = await BookingsRepository.createBookingWithTransaction({
       userId,
       fieldId: dto.fieldId,
@@ -98,7 +104,23 @@ export class BookingsService {
       depositAmount,
       paymentOption: dto.paymentOption,
       ...(dto.note !== undefined ? { note: dto.note } : {}),
-      checkInCode
+      checkInCode,
+      payosOrderCode
+    })
+
+    const payosResult = await payos.paymentRequests.create({
+      orderCode: payosOrderCode,
+      amount: paidAmount,
+      description: `Dat san #${booking.id}`,
+      returnUrl: env.PAYOS_RETURN_URL!,
+      cancelUrl: env.PAYOS_CANCEL_URL!,
+      items: [
+        {
+          name: dto.paymentOption === 'full' ? 'Thanh toan toan bo' : 'Dat coc 30%',
+          quantity: 1,
+          price: paidAmount
+        }
+      ]
     })
 
     return {
@@ -108,7 +130,10 @@ export class BookingsService {
       totalPrice,
       depositAmount,
       paidAmount: dto.paymentOption === 'full' ? totalPrice : depositAmount,
-      checkInCode
+      checkInCode,
+      checkoutUrl: payosResult.checkoutUrl,
+      qrCode: payosResult.qrCode,
+      payosOrderCode
     }
   }
 }

@@ -54,6 +54,7 @@ enum TransactionType {
 enum PaymentMethod {
   qr_transfer
   cash
+  payos
 }
 
 enum TransactionStatus {
@@ -267,6 +268,7 @@ model Booking {
   note String? @db.Text
   rejectionReason String? @map("rejection_reason") @db.VarChar(255)
   isSettled Boolean @default(false) @map("is_settled") // Đã thanh toán cho Chủ sân chưa
+  payosOrderCode BigInt? @unique @map("payos_order_code") // Liên kết với PayOS
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
@@ -287,6 +289,7 @@ model Transaction {
   method PaymentMethod @default(qr_transfer)
   status TransactionStatus @default(success)
   description String? @db.VarChar(255)
+  payosOrderCode BigInt? @unique @map("payos_order_code") // Mã đơn PayOS
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 

@@ -41,6 +41,7 @@ export class BookingsRepository {
     paymentOption: 'deposit' | 'full'
     note?: string
     checkInCode: string
+    payosOrderCode: number
   }) {
     return prisma.$transaction(async (tx) => {
       const booking = await tx.booking.create({
@@ -54,6 +55,7 @@ export class BookingsRepository {
           status: 'pending',
           paymentStatus: 'unpaid',
           checkInCode: data.checkInCode,
+          payosOrderCode: data.payosOrderCode,
           ...(data.note !== undefined ? { note: data.note } : {})
         }
       })
@@ -64,12 +66,50 @@ export class BookingsRepository {
           bookingId: booking.id,
           amount: paidAmount,
           type: 'payment',
-          method: 'qr_transfer',
+          method: 'payos',
           status: 'pending',
-          description: data.paymentOption === 'full' ? 'Thanh toán toàn bộ qua QR - chờ xác nhận' : 'Đặt cọc 30% qua QR - chờ xác nhận'
+          payosOrderCode: data.payosOrderCode,
+          description: data.paymentOption === 'full' ? 'Thanh toán toàn bộ qua PayOS' : 'Đặt cọc 30% qua PayOS'
         }
       })
       return booking
+    })
+  }
+
+  static async findByPayosOrderCode(orderCode: number) {
+    return prisma.booking.findUnique({
+      where: { payosOrderCode: orderCode },
+      include: {
+        transactions: {
+          where: {
+            payosOrderCode: orderCode
+          }
+        }
+      }
+    })
+  }
+
+  static async confirmPayment(bookingId: number, transactionId: number, paymentOption: 'deposit' | 'full') {
+    return prisma.$transaction(async (tx) => {
+      await tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: 'success' }
+      })
+
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'confirmed',
+          paymentStatus: paymentOption === 'full' ? 'paid' : 'partially_paid'
+        }
+      })
+    })
+  }
+
+  static async cancelByPayosOrderCode(orderCode: number) {
+    return prisma.booking.updateMany({
+      where: { payosOrderCode: orderCode, status: 'pending' },
+      data: { status: 'cancelled' }
     })
   }
 }

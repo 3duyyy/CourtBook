@@ -21,5 +21,13 @@ export const env = {
   CLIENT_URL: process.env.CLIENT_URL,
 
   EMAIL_USER: process.env.EMAIL_USER,
-  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD
+  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
+
+  PAYOS_CLIENT_ID: process.env.PAYOS_CLIENT_ID,
+  PAYOS_API_KEY: process.env.PAYOS_API_KEY,
+  PAYOS_CHECKSUM_KEY: process.env.PAYOS_CHECKSUM_KEY,
+  PAYOS_RETURN_URL: process.env.PAYOS_RETURN_URL,
+  PAYOS_CANCEL_URL: process.env.PAYOS_CANCEL_URL,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  GROQ_API_KEY: process.env.GROQ_API_KEY
 }

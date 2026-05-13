@@ -14,6 +14,7 @@ import { ROLES } from '../../shared/constants/roles'
 import { formatDateDDMMYYYY, formatHHmm, timeToMinutes } from '../../shared/utils/format'
 import { OwnerFacilitiesListParams } from '../../shared/types/owner'
 import { formatBookingCode } from '../../shared/utils/utils'
+import { prisma } from '../../shared/prisma/client'
 
 type AvailabilitySlot = {
   startTime: string
@@ -727,6 +728,49 @@ export class FacilitiesService {
         description: field.description,
         fromPrice,
         slots
+      }
+    })
+  }
+
+  static async ownerRejectBooking(ownerId: number, bookingId: number, reason: string) {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        field: { select: { facility: { select: { ownerId: true } } } },
+        user: { select: { id: true, bankName: true, bankAccount: true, accountHolder: true } }
+      }
+    })
+
+    if (!booking) throw new AppError('Không tìm thấy booking', StatusCodes.NOT_FOUND)
+    if (booking.field.facility.ownerId !== ownerId) throw new AppError('Không có quyền', StatusCodes.FORBIDDEN)
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      throw new AppError('Không thể từ chối booking ở trạng thái này', StatusCodes.BAD_REQUEST)
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'rejected',
+          rejectionReason: reason
+        }
+      })
+
+      if (['paid', 'partially_paid'].includes(booking.paymentStatus)) {
+        const refundAmount = booking.paymentStatus === 'paid' ? Number(booking.totalPrice) : Number(booking.depositAmount)
+
+        await tx.refundRequest.create({
+          data: {
+            userId: booking.userId,
+            bookingId: bookingId,
+            amount: refundAmount,
+            bankName: booking.user.bankName || 'Chưa cập nhật',
+            bankAccount: booking.user.bankAccount || 'Chưa cập nhật',
+            accountHolder: booking.user.accountHolder || 'Chưa cập nhật',
+            reason: `Chủ sân từ chối: ${reason}`,
+            status: 'pending'
+          }
+        })
       }
     })
   }

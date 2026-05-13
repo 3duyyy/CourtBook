@@ -41,4 +41,6 @@ router.get('/reviews', ReviewsController.getOwnerReviews)
 router.post('/reviews/:reviewId/reply', validationMiddleware(OwnerReplyReviewDto), ReviewsController.ownerReplyReview)
 router.delete('/reviews/:reviewId', ReviewsController.ownerDeleteReview)
 
+router.patch('/bookings/:bookingId/reject', FacilitiesController.ownerRejectBooking)
+
 export const ownerRoute = router

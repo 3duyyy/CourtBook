@@ -45,3 +45,15 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     return next(new AppError('Lỗi xác thực không xác định', StatusCodes.INTERNAL_SERVER_ERROR))
   }
 }
+
+export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(' ')[1]
+  if (!token) return next()
+  try {
+    const decoded = JwtUtil.verifyAccessToken(token) as any
+    req.user = decoded
+  } catch {
+    // Token không hợp lệ thì bỏ qua
+  }
+  next()
+}

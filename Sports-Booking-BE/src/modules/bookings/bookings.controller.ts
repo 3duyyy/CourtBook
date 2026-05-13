@@ -11,7 +11,7 @@ export class BookingsController {
       res.status(StatusCodes.CREATED).json({
         success: true,
         data: result,
-        message: 'Đặt sân thành công! Đang chờ xác nhận thanh toán.'
+        message: 'Booking tạo thành công. Vui lòng thanh toán.'
       })
     } catch (error) {
       next(error)

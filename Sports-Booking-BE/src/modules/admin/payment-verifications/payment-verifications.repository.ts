@@ -86,7 +86,7 @@ export class AdminPaymentVerificationsRepository {
       INNER JOIN fields fld ON fld.id = b.field_id
       INNER JOIN facilities f ON f.id = fld.facility_id
       WHERE t.type = 'payment'
-      AND t.method = 'qr_transfer'
+      AND t.method IN ('qr_transfer', 'payos')
       ${statusSql}
       ${fromSql}
       ${toSql}
@@ -244,10 +244,46 @@ export class AdminPaymentVerificationsRepository {
           })
         }
       } else {
-        await tx.booking.update({
-          where: { id: current.booking.id },
-          data: { paymentStatus: deriveBookingPaymentStatus(totalPrice, successfulPaidAmount) }
-        })
+        // await tx.booking.update({
+        //   where: { id: current.booking.id },
+        //   data: { paymentStatus: deriveBookingPaymentStatus(totalPrice, successfulPaidAmount) }
+        // })
+
+        const isPayosPayment = current.method === 'payos'
+        const hasBeenPaid = successfulPaidAmount > 0 || isPayosPayment
+
+        if (hasBeenPaid) {
+          // Đổi booking status thành rejected
+          await tx.booking.update({
+            where: { id: current.booking.id },
+            data: {
+              status: 'rejected',
+              paymentStatus: 'refunded',
+              rejectionReason: reason || 'Admin từ chối - hoàn tiền'
+            }
+          })
+
+          // Tạo RefundRequest để admin biết cần hoàn tiền
+          const user = await tx.user.findUnique({ where: { id: current.booking.userId } })
+          await tx.refundRequest.create({
+            data: {
+              bookingId: current.booking.id,
+              userId: current.booking.userId,
+              amount: current.amount,
+              status: 'pending',
+              reason: reason || 'Admin từ chối thanh toán - hoàn tiền cho khách',
+              bankName: user?.bankName || 'Chưa cập nhật',
+              bankAccount: user?.bankAccount || 'Chưa cập nhật',
+              accountHolder: user?.accountHolder || 'Chưa cập nhật'
+            }
+          })
+        } else {
+          // Chưa thanh toán thì chỉ update paymentStatus
+          await tx.booking.update({
+            where: { id: current.booking.id },
+            data: { paymentStatus: deriveBookingPaymentStatus(totalPrice, successfulPaidAmount) }
+          })
+        }
       }
 
       return updatedTx
