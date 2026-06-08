@@ -136,7 +136,7 @@ const handleCancelRequest = () => {
           <v-divider class="my-4" />
 
           <v-row dense>
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="3">
               <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 h-100">
                 <div class="d-flex align-start ga-3">
                   <v-icon :icon="mdiCalendarMonthOutline" size="20" />
@@ -150,7 +150,7 @@ const handleCancelRequest = () => {
               </v-sheet>
             </v-col>
 
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="3">
               <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 h-100">
                 <div class="d-flex align-start ga-3">
                   <v-icon :icon="mdiClockOutline" size="20" />
@@ -162,11 +162,22 @@ const handleCancelRequest = () => {
               </v-sheet>
             </v-col>
 
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="3">
               <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 h-100">
                 <div>
-                  <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">Ghi chú thanh toán</div>
-                  <div class="text-body-1 font-weight-bold">
+                  <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">Mã Check-in</div>
+                  <div class="text-body-1 font-weight-bold font-mono text-success">
+                    {{ booking.checkInCode || "---" }}
+                  </div>
+                </div>
+              </v-sheet>
+            </v-col>
+
+            <v-col cols="12" md="3">
+              <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 h-100">
+                <div>
+                  <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-1">Ghi chú</div>
+                  <div class="text-body-2 font-weight-medium">
                     {{ booking.paymentNote || "-" }}
                   </div>
                 </div>

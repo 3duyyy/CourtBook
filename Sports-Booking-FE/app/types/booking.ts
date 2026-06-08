@@ -63,6 +63,7 @@ export interface CustomerBookingItem {
   canPayRemainingAtVenue?: boolean
 
   cancelBlockedReason?: string | null
+  checkInCode?: string | null
 }
 
 export interface MyBookingsQueryParams {
