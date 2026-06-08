@@ -186,6 +186,7 @@ export class UsersRepository {
           paymentStatus: true,
           totalPrice: true,
           depositAmount: true,
+          checkInCode: true,
           rejectionReason: true,
           startTime: true,
           endTime: true,

@@ -110,6 +110,7 @@ export class UserService {
         totalPrice,
         depositAmount,
         remainingAmount,
+        checkInCode: row.checkInCode,
         paymentBadge: this.mapPaymentBadge(row.status, row.paymentStatus),
         paymentNote: this.mapPaymentNote(row.status, row.paymentStatus, row.rejectionReason),
         canViewDetail: true,
